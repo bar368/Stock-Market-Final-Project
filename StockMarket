@@ -1,0 +1,215 @@
+#Importing libraries.
+from sklearn.svm import SVR
+import pandas as pd
+import matplotlib.pyplot as plt
+
+print('\nPredicting the price of Apple, Tesla, and Roblox')
+print('on the Stock Market within a 1-month period.')
+
+
+#Changing the plotting theme.
+plt.style.use('seaborn-bright')
+
+#Getting the data
+apple = pd.read_csv('AAPL.csv') #AAPL
+tesla = pd.read_csv('TSLA.csv') #TSLA
+roblox = pd.read_csv('RBLX.csv') #RBLX
+
+
+#Displaying Apple Stock.
+a = apple['Adj Close']  #Adjusted Close Price.
+plt.figure(figsize=(8,4))   #Chaning graph size.
+plt.plot(a, 'r.--', #color red, and symbol type.
+         label='Stock Price $', #Legend title.
+         markersize=12,
+         linewidth=2)
+plt.title('Apple Inc. Stock Price (11/15/21-12/15/21)', fontdict={'fontsize': 20})
+plt.xlabel('Each Dot is a Day')
+plt.ylabel('Adjusted Close Price')
+plt.legend()
+plt.show()
+
+#Displaying Tesla Stock.
+t = tesla['Adj Close']
+plt.figure(figsize=(8,4))
+plt.plot(t, 'b.--', label='Stock Price $', markersize=12, linewidth=2)
+plt.title('Tesla, Inc. Stock Price (11/15/21-12/15/21)', fontdict={'fontsize': 20})
+plt.xlabel('Each Dot is a Day')
+plt.ylabel('Adjusted Close Price')
+plt.legend()
+plt.show()
+
+#Displaying Roblox Stock.
+d = roblox['Adj Close']
+plt.figure(figsize=(8,4))
+plt.plot(t, 'g.--', label='Stock Price $', markersize=12, linewidth=2)
+plt.title('Roblox Corporation Stock Price (11/15/21-12/15/21)',
+          fontdict={'fontsize': 20})
+plt.xlabel('Each Dot is a Day')
+plt.ylabel('Adjusted Close Price')
+plt.legend()
+plt.show()
+
+
+#Storing the last row of data from the csv file, to test prediction accuracy.
+actual_price_AAPL = apple.tail(1)
+actual_price_TSLA = tesla.tail(1)
+actual_price_RBLX = roblox.tail(1)
+
+
+#Getting all of the data expect the last row.
+apple = apple.head(len(apple)-1)   # -1 to not count the last row.
+tesla = tesla.head(len(tesla)-1)
+roblox = roblox.head(len(roblox)-1)
+
+
+
+#Displaying Apple data
+print("\nApple's 1-Month Historical Data")
+print('---------------------------------')
+print(apple)
+
+#Displaying Tesla data
+print("\nTesla's 1-Month Historical Data")
+print('---------------------------------')
+print(tesla)
+
+#Displaying Roblox data
+print("\nRoblox's 1-Month Historical Data")
+print('---------------------------------')
+print(roblox)
+
+
+
+#Creating lists.
+days_AAPL = list()
+days_TSLA = list()
+days_RBLX = list()
+
+#Adjusted Close Prices (acp).
+acp_AAPL = list()
+acp_TSLA = list()
+acp_RBLX = list()
+
+#Getting only the date and the acp.
+apple_days = apple.loc[:, 'Date']   #getting all rows in column date.
+apple_close = apple.loc[:, 'Adj Close'] #getting all rows in column Adj Close.
+
+tesla_days = tesla.loc[:, 'Date']
+tesla_close = tesla.loc[:, 'Adj Close']
+
+roblox_days = roblox.loc[:, 'Date']
+roblox_close = roblox.loc[:, 'Adj Close']
+
+#Creating independent data sets (dates).
+for day in apple_days: #Apple
+    days_AAPL.append([int(day.split('-')[2])])
+
+for day in tesla_days: #Tesla
+    days_TSLA.append([int(day.split('-')[2])])
+
+for day in roblox_days: #Roblox
+    days_RBLX.append([int(day.split('-')[2])])
+
+#Creating the dependent data set (adjusted close prices).
+for adj_close_price in apple_close: #Apple
+    acp_AAPL.append(float(adj_close_price))
+
+for adj_close_price in tesla_close: #Tesla
+    acp_TSLA.append(float(adj_close_price))
+
+for adj_close_price in roblox_close: #Roblox
+    acp_RBLX.append(float(adj_close_price))
+
+# Displaying the days the market was open,
+# all are similar for Apple, Tesla, and Roblox.
+print('\nDisplaying the days the market was open.')
+print('----------------------------------------')
+print(days_AAPL)
+
+''''
+This will display the stock's prices
+throughout the 1-month period.
+
+print(acp_AAPL)
+print(acp_TSLA)
+print(acp_RBLX)
+'''
+
+
+#Creating a model.
+rbf_AAPL = SVR(kernel= 'rbf', C=1000.0, gamma=0.85) #Apple
+rbf_AAPL.fit(days_RBLX, acp_AAPL)
+
+rbf_TSLA = SVR(kernel= 'rbf', C=1000.0, gamma=0.85) #Tesla
+rbf_TSLA.fit(days_RBLX, acp_TSLA)
+
+rbf_RBLX = SVR(kernel= 'rbf', C=1000.0, gamma=0.85) #Roblox
+rbf_RBLX.fit(days_RBLX, acp_RBLX)
+
+#Plotting the model.
+plt.figure(figsize=(9,5)) #Changing the size.
+plt.scatter(days_AAPL,  #Using a scatter plot to plot days and price.
+            acp_AAPL,
+            color='black',
+            label = 'Data')
+plt.plot(days_AAPL,
+         rbf_AAPL.predict(days_AAPL), #Plotting prediction.
+         '--',  #Symbol type.
+         color = 'red',
+         label = 'RBF Model')
+
+plt.xlabel('Days')  #Adding Headings for x and y axis.
+plt.ylabel('Adjusted Close Price ($)')
+plt.legend()
+plt.title('Apple Inc. (AAPL)', fontdict={'fontsize': 20})
+plt.tight_layout()
+
+plt.savefig('AAPLprediction.png', dpi=300)
+plt.show()
+
+#Displaying the prediction price for the given day.
+day = [[15]] #The final day
+print('The RBF SVR predicted price:', rbf_AAPL.predict(day)) #Apple
+#Displaying the actual price.
+print('The actual price:', actual_price_AAPL['Adj Close'][20])
+
+plt.figure(figsize=(9,5))
+plt.scatter(days_TSLA, acp_TSLA, color='black', label = 'Data')
+plt.plot(days_TSLA, rbf_TSLA.predict(days_TSLA),
+         '--', color = 'blue', label = 'RBF Model')
+
+plt.xlabel('Days')
+plt.ylabel('Adjusted Close Price ($)')
+plt.legend()
+plt.title('Tesla, Inc (TSLA)', fontdict={'fontsize': 20})
+plt.tight_layout()
+
+plt.savefig('TSLAprediction.png', dpi=300)
+plt.show()
+
+#Displaying the prediction price for the given day.
+day = [[15]]
+print('The RBF SVR predicted price:', rbf_TSLA.predict(day)) #Tesla
+#Displaying the actual price.
+print('The actual price:', actual_price_TSLA['Adj Close'][20])
+
+plt.figure(figsize=(9,5))
+plt.scatter(days_RBLX, acp_RBLX, color='black', label = 'Data')
+plt.plot(days_RBLX, rbf_RBLX.predict(days_RBLX),
+         '--', color = 'green', label = 'RBF Model')
+
+plt.xlabel('Days')
+plt.ylabel('Adjusted Close Price ($)')
+plt.legend()
+plt.title('Roblox Corporation (RBLX)', fontdict={'fontsize': 20})
+plt.tight_layout()
+
+plt.savefig('RBLXprediction.png', dpi=300)
+plt.show()
+
+#Displaying the prediction price for the given day.
+day = [[15]]
+print('The RBF SVR predicted price:', rbf_RBLX.predict(day)) #Roblox
+#Displaying the actual price.
+print('The actual price:', actual_price_RBLX['Adj Close'][20])
